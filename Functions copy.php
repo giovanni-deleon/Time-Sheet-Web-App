@@ -28,7 +28,7 @@ function check_login($con){
 
 }
 
-function randum_num($length){
+function random_num($length){
 
     $text = "";
     if($length < 5)
