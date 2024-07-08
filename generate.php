@@ -13,10 +13,23 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $description = $_POST['description'];
     $hours = $_POST['hours'];
 
+//////////////////////////////////////////////////////////////////////////
+
+    $userID = $_SESSION['user_id'];
+    $username = $_SESSION['username'];
+
+    //////////////////////////////////////////////////////////////////////////
+
+
+    $query = "INSERT INTO event_time_sheet (date, location, description, userName, ID) VALUES (?, ?, ?, ?, ?)";
+$stmt = $con->prepare($query);
+$stmt->bind_param("ssssi", $date, $location, $description, $username, $userID);
+
+
     // Insert data into event_time_sheet table
-    $query = "INSERT INTO event_time_sheet (date, location, description, hours) VALUES (?, ?, ?, ?)";
-    $stmt = $con->prepare($query);
-    $stmt->bind_param("ssss", $date, $location, $description, $hours);
+   // $query = "INSERT INTO event_time_sheet (date, location, description, hours) VALUES (?, ?, ?, ?)";
+   // $stmt = $con->prepare($query);
+    //$stmt->bind_param("ssss", $date, $location, $description, $hours);
 
     if ($stmt->execute()) {
         // Get the ID of the inserted row
