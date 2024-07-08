@@ -15,16 +15,38 @@ $result = mysqli_query($con, $query);
 
 // Handle approval or denial
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
-    if (isset($_POST['approve'])) {
-        // Handle approve logic
-        $timeEventID = $_POST['approve'];
-        // Implement approve functionality as needed
-        echo "Approved Time Event ID: $timeEventID";
-    } elseif (isset($_POST['deny'])) {
-        // Handle deny logic
-        $timeEventID = $_POST['deny'];
-        // Implement deny functionality as needed
-        echo "Denied Time Event ID: $timeEventID";
+    $timeEventID = $_POST['timeEventID'];
+    $approveComment = $_POST['approveComment'] ?? ''; // Default to empty string if not set
+    $approve = isset($_POST['approve']) ? 1 : 0; // 1 for approve, 0 for deny
+
+    // Fetch the studentID and other details from event_time_sheet based on timeEventID
+    $fetchDetailsQuery = "SELECT ID, date FROM event_time_sheet WHERE timeEventID = ?";
+    $stmt = $con->prepare($fetchDetailsQuery);
+    $stmt->bind_param("i", $timeEventID);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $row = $result->fetch_assoc();
+
+    if ($row) {
+        $studentID = $row['ID'];
+        $studentSubmitDate = $row['date'];
+        $approverID = $_SESSION['user_id']; // Assuming the admin's ID is stored in the session
+
+        // Debugging: Output the values before inserting
+        echo "Debugging: studentID=$studentID, approverID=$approverID, studentSubmitDate=$studentSubmitDate, approve=$approve, approveComment=$approveComment";
+
+        // Insert data into timeSheet table
+        $insertQuery = "INSERT INTO timeSheet (studentID, approverID, dateCreated, studentSubmitDate, approve, approveDate, approveComment) VALUES (?, ?, NOW(), ?, ?, NOW(), ?)";
+        $stmt = $con->prepare($insertQuery);
+        $stmt->bind_param("iisis", $studentID, $approverID, $studentSubmitDate, $approve, $approveComment);
+
+        if ($stmt->execute()) {
+            echo "Time Event ID $timeEventID has been " . ($approve ? "approved" : "denied") . ".";
+        } else {
+            echo "Error: " . $stmt->error;
+        }
+    } else {
+        echo "Error: Event details not found.";
     }
 }
 ?>
@@ -34,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 <head>
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg64y4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" crossorigin="anonymous">
     <style>
         .container {
             margin-top: 50px;
@@ -55,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     <th>Date</th>
                     <th>Location</th>
                     <th>Description</th>
+                    <th>User Name</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -65,14 +88,13 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     <td><?php echo htmlspecialchars($row['date']); ?></td>
                     <td><?php echo htmlspecialchars($row['location']); ?></td>
                     <td><?php echo nl2br(htmlspecialchars($row['description'])); ?></td>
+                    <td><?php echo htmlspecialchars($row['userName']); ?></td>
                     <td>
                         <form method="POST" action="">
-                            <input type="hidden" name="approve" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">
-                            <button type="submit" class="btn btn-success">Approve</button>
-                        </form>
-                        <form method="POST" action="">
-                            <input type="hidden" name="deny" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">
-                            <button type="submit" class="btn btn-danger">Deny</button>
+                            <input type="hidden" name="timeEventID" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">
+                            <textarea name="approveComment" class="form-control mb-2" placeholder="Comment (optional)"></textarea>
+                            <button type="submit" name="approve" class="btn btn-success">Approve</button>
+                            <button type="submit" name="deny" class="btn btn-danger">Deny</button>
                         </form>
                     </td>
                 </tr>

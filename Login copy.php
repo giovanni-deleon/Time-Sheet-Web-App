@@ -1,45 +1,39 @@
 <?php
 session_start();
 
-
-
-
-
 include("Connection.php");
-include("Functions.php");
 
 if($_SERVER['REQUEST_METHOD'] == "POST") {
-    // Something was posted
     $user_name = $_POST['user_name'];
     $password = $_POST['password'];
 
-    if(!empty($user_name) && !empty($password) && !is_numeric($user_name)) {
-        // Read from database
-        $query = "SELECT * FROM users WHERE user_name = ? LIMIT 1";
+    if(!empty($user_name) && !empty($password)) {
+        // Read from the database
+        $query = "SELECT * FROM users WHERE user_name = ?";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("s", $user_name);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-        // Prepare and bind
-        if ($stmt = mysqli_prepare($con, $query)) {
-            mysqli_stmt_bind_param($stmt, "s", $user_name);
-            mysqli_stmt_execute($stmt);
-            $result = mysqli_stmt_get_result($stmt);
+        if($result && $result->num_rows > 0) {
+            $user_data = $result->fetch_assoc();
+            
+            // Verify password
+            if(password_verify($password, $user_data['password'])) {
+                $_SESSION['user_id'] = $user_data['id'];
+                $_SESSION['role'] = $user_data['role'];
+                $_SESSION['username'] = $user_data['user_name'];
 
-            if($result && mysqli_num_rows($result) > 0) {
-                $user_data = mysqli_fetch_assoc($result);
-
-                if(password_verify($password, $user_data['password'])) {
-                    //$_SESSION['user_id'] = $user_data['user_id'];
-                    $_SESSION['role'] = $user_data['role'];
-
-                    if($user_data['role'] == 'admin') {
-                        header("Location: admin_dashboard.php");
-                    } else {
-                        header("Location: student_dashboard.php");
-                    }
-                    die;
+                if ($user_data['role'] == 'admin') {
+                    header("Location: admin_dashboard.php");
+                } else {
+                    header("Location: student_dashboard.php");
                 }
+                die;
             }
         }
-        echo "Wrong username or password!";
+        
+        echo "Invalid username or password!";
     } else {
         echo "Please enter some valid information!";
     }
