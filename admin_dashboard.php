@@ -77,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
             <thead>
                 <tr>
                     <th>Time Event ID</th>
+                    <th>Student ID</th>
                     <th>Date</th>
                     <th>Location</th>
                     <th>Description</th>
@@ -88,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                 <?php while ($row = mysqli_fetch_assoc($result)) : ?>
                 <tr>
                     <td><?php echo htmlspecialchars($row['timeEventID']); ?></td>
+                    <td><?php echo htmlspecialchars($row['ID']); ?></td>
                     <td><?php echo htmlspecialchars($row['date']); ?></td>
                     <td><?php echo htmlspecialchars($row['location']); ?></td>
                     <td><?php echo nl2br(htmlspecialchars($row['description'])); ?></td>
