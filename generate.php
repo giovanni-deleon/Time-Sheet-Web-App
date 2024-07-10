@@ -1,3 +1,6 @@
+
+
+
 <?php
 session_start();
 if ($_SESSION['role'] != 'student') {
@@ -21,14 +24,14 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     //////////////////////////////////////////////////////////////////////////
 
 
-    $query = "INSERT INTO event_time_sheet (date, location, description, userName, ID) VALUES (?, ?, ?, ?, ?)";
-$stmt = $con->prepare($query);
-$stmt->bind_param("ssssi", $date, $location, $description, $username, $userID);
+    $query = "INSERT INTO event_time_sheet (date, location, description, hours, userName, ID) VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = $con->prepare($query);
+    $stmt->bind_param("sssssi", $date, $location, $description, $hours, $username, $userID); // just messed with this
 
 
     // Insert data into event_time_sheet table
    // $query = "INSERT INTO event_time_sheet (date, location, description, hours) VALUES (?, ?, ?, ?)";
-   // $stmt = $con->prepare($query);
+   // 
     //$stmt->bind_param("ssss", $date, $location, $description, $hours);
 
     if ($stmt->execute()) {
