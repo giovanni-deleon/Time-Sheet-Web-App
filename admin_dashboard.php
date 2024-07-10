@@ -18,8 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     if (isset($_POST['approve'])) {
         $timeEventID = $_POST['approve'];
 
-        // Retrieve studentID (ID) and hours from event_time_sheet
-        $query = "SELECT ID, hours FROM event_time_sheet WHERE timeEventID = ?";
+        // Retrieve studentID (ID), hours, and weekDate from event_time_sheet
+        $query = "SELECT ID, hours, weekDate FROM event_time_sheet WHERE timeEventID = ?";
         $stmt = $con->prepare($query);
         $stmt->bind_param("i", $timeEventID);
         $stmt->execute();
@@ -27,6 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
         $row = $result->fetch_assoc();
         $studentID = $row['ID'];
         $hours = $row['hours'];
+        $weekDate = $row['weekDate'];
 
         // Insert into timeSheet
         $approverID = $_SESSION['user_id']; // Assuming approverID is stored in session
@@ -36,9 +37,9 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
         $approveDate = $dateCreated; // Example: Same as dateCreated for now
         $approveComment = "Approved"; // Example: A comment can be added here
 
-        $insertQuery = "INSERT INTO timeSheet (studentID, approverID, dateCreated, studentSubmitDate, approve, approveDate, approveComment, hours) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $insertQuery = "INSERT INTO timeSheet (studentID, approverID, dateCreated, studentSubmitDate, approve, approveDate, approveComment, hours, weekDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $con->prepare($insertQuery);
-        $stmt->bind_param("iisssssi", $studentID, $approverID, $dateCreated, $studentSubmitDate, $approve, $approveDate, $approveComment, $hours);
+        $stmt->bind_param("iisssssis", $studentID, $approverID, $dateCreated, $studentSubmitDate, $approve, $approveDate, $approveComment, $hours, $weekDate);
         
         if ($stmt->execute()) {
             echo "Time sheet approved successfully. Email sent.";
@@ -82,6 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     <th>Location</th>
                     <th>Description</th>
                     <th>Hours</th>
+                    <th>Week Date</th>
                     <th>Actions</th>
                 </tr>
             </thead>
@@ -94,6 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     <td><?php echo htmlspecialchars($row['location']); ?></td>
                     <td><?php echo nl2br(htmlspecialchars($row['description'])); ?></td>
                     <td><?php echo htmlspecialchars($row['hours']); ?></td>
+                    <td><?php echo htmlspecialchars($row['weekDate']); ?></td>
                     <td>
                         <form method="POST" action="">
                             <input type="hidden" name="approve" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">

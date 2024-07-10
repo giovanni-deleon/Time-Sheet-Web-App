@@ -1,58 +1,43 @@
-
-
-
 <?php
 session_start();
-if ($_SESSION['role'] != 'student') {
-    header("Location: Login.php");
-    die;
-}
 
 include("Connection.php");
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
     $date = $_POST['date'];
     $location = $_POST['location'];
+    $weekDate = $_POST['weekDate'];
     $description = $_POST['description'];
     $hours = $_POST['hours'];
+    $user_name = $_SESSION['username'];
+    $user_id = $_SESSION['user_id'];
 
-//////////////////////////////////////////////////////////////////////////
-
-    $userID = $_SESSION['user_id'];
-    $username = $_SESSION['username'];
-
-    //////////////////////////////////////////////////////////////////////////
-
-
-    $query = "INSERT INTO event_time_sheet (date, location, description, hours, userName, ID) VALUES (?, ?, ?, ?, ?, ?)";
-    $stmt = $con->prepare($query);
-    $stmt->bind_param("sssssi", $date, $location, $description, $hours, $username, $userID); // just messed with this
-
-
-    // Insert data into event_time_sheet table
-   // $query = "INSERT INTO event_time_sheet (date, location, description, hours) VALUES (?, ?, ?, ?)";
-   // 
-    //$stmt->bind_param("ssss", $date, $location, $description, $hours);
-
-    if ($stmt->execute()) {
-        // Get the ID of the inserted row
-        $timeEventID = $stmt->insert_id;
-
-        // Redirect to display.php with the inserted data
-        $_SESSION['submitted_data'] = [
-            'timeEventID' => $timeEventID,
-            'date' => $date,
-            'location' => $location,
-            'description' => $description, 
-            'hours' => $hours
-        ];
-        header("Location: display.php");
-        die;
+    if (!empty($date) && !empty($location) && !empty($weekDate) && !empty($description) && !empty($hours) && !empty($user_name)) {
+        // Insert into event_time_sheet table
+        $query = "INSERT INTO event_time_sheet (ID, userName, date, location, weekDate, description, hours) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $con->prepare($query);
+        $stmt->bind_param("isssssi", $user_id, $user_name, $date, $location, $weekDate, $description, $hours);
+        
+        if ($stmt->execute()) {
+            echo "Time sheet submitted successfully.";
+            header("Location: student_dashboard.php");
+            die;
+        } else {
+            echo "Error submitting time sheet: " . $stmt->error;
+        }
     } else {
-        echo "Error: " . $stmt->error;
+        echo "Please fill out all fields!";
     }
-} else {
-    header("Location: student_dashboard.php");
-    die;
 }
 ?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generate</title>
+</head>
+<body>
+    <h1>Generating Time Sheet</h1>
+</body>
+</html>

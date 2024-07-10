@@ -34,6 +34,9 @@ if ($_SESSION['role'] != 'student') {
                         </div>
                     </div>
                     <div class="form-group">
+                        <input type="text" name="weekDate" class="form-control" placeholder="Week Date (e.g., June 6 - June 7)">
+                    </div>
+                    <div class="form-group">
                         <textarea name="description" rows="5" class="form-control" placeholder="Description"></textarea>
                     </div>
                     <div class="form-group">
