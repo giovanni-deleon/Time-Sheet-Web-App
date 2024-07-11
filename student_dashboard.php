@@ -6,6 +6,16 @@ if ($_SESSION['role'] != 'student') {
     header("Location: Login.php");
     die;
 }
+
+include("Connection.php");
+
+// Fetch approved time sheets for the student
+$studentID = $_SESSION['user_id'];
+$query = "SELECT * FROM timeSheet WHERE studentID = ? AND approve = 1";
+$stmt = $con->prepare($query);
+$stmt->bind_param("i", $studentID);
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -34,13 +44,13 @@ if ($_SESSION['role'] != 'student') {
                         </div>
                     </div>
                     <div class="form-group">
-                        <input type="text" name="weekDate" class="form-control" placeholder="Week Date (e.g., June 6 - June 7)">
-                    </div>
-                    <div class="form-group">
                         <textarea name="description" rows="5" class="form-control" placeholder="Description"></textarea>
                     </div>
                     <div class="form-group">
                         <input type="number" name="hours" class="form-control" placeholder="Hours">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" name="weekDate" class="form-control" placeholder="Week Date (e.g., June 6 - June 7)">
                     </div>
                     <div class="form-group">
                         <button type="submit" class="btn btn-block btn-success">Submit Time Sheet</button>
@@ -49,8 +59,17 @@ if ($_SESSION['role'] != 'student') {
             </div>
             <div class="col-md-6">
                 <h1>Print Approved Time Sheet</h1>
-                <p>Click the button below to print your approved time sheet as a PDF.</p>
+                <p>Select a time sheet to print as a PDF.</p>
                 <form method="POST" action="print_pdf.php">
+                    <div class="form-group">
+                        <select name="timeSheetID" class="form-control">
+                            <?php while ($row = $result->fetch_assoc()): ?>
+                                <option value="<?php echo htmlspecialchars($row['timeSheetID']); ?>">
+                                    <?php echo htmlspecialchars($row['weekDate']) . " - " . htmlspecialchars($row['hours']) . " hours"; ?>
+                                </option>
+                            <?php endwhile; ?>
+                        </select>
+                    </div>
                     <div class="form-group">
                         <button type="submit" class="btn btn-block btn-primary">Print PDF</button>
                     </div>
