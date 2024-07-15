@@ -12,47 +12,6 @@ include("Connection.php");
 // Fetch data from event_time_sheet table
 $query = "SELECT * FROM event_time_sheet";
 $result = mysqli_query($con, $query);
-
-// Handle approval or denial
-if ($_SERVER['REQUEST_METHOD'] == "POST") {
-    if (isset($_POST['approve'])) {
-        $timeEventID = $_POST['approve'];
-
-        // Retrieve studentID (ID), hours, and weekDate from event_time_sheet
-        $query = "SELECT ID, hours, weekDate FROM event_time_sheet WHERE timeEventID = ?";
-        $stmt = $con->prepare($query);
-        $stmt->bind_param("i", $timeEventID);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        $studentID = $row['ID'];
-        $hours = $row['hours'];
-        $weekDate = $row['weekDate'];
-
-        // Insert into timeSheet
-        $approverID = $_SESSION['user_id']; // Assuming approverID is stored in session
-        $dateCreated = date('Y-m-d H:i:s');
-        $studentSubmitDate = $dateCreated; // Example: Same as dateCreated for now
-        $approve = 1; // Example: Assuming approval is set as 1 for yes
-        $approveDate = $dateCreated; // Example: Same as dateCreated for now
-        $approveComment = "Approved"; // Example: A comment can be added here
-
-        $insertQuery = "INSERT INTO timeSheet (studentID, approverID, dateCreated, studentSubmitDate, approve, approveDate, approveComment, hours, weekDate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        $stmt = $con->prepare($insertQuery);
-        $stmt->bind_param("iisssssis", $studentID, $approverID, $dateCreated, $studentSubmitDate, $approve, $approveDate, $approveComment, $hours, $weekDate);
-        
-        if ($stmt->execute()) {
-            echo "Time sheet approved successfully. Email sent.";
-            // Optionally, send an email or perform other actions upon approval
-        } else {
-            echo "Error approving time sheet: " . $stmt->error;
-        }
-    } elseif (isset($_POST['deny'])) {
-        // Handle denial logic here if needed
-        $timeEventID = $_POST['deny'];
-        echo "Time Event ID $timeEventID denied.";
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -61,14 +20,124 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
     <meta charset="UTF-8">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg64y4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f5f6fa;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+        }
+        
         .container {
             margin-top: 50px;
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
         }
+        
         .btn {
             margin-right: 10px;
         }
+        
+        .table thead th {
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .btn {
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            border: none;
+        }
+        
+        .btn-success:hover {
+            background-color: #218838;
+        }
+        
+        .btn-danger {
+            background-color: #dc3545;
+            border: none;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+        
+        h1 {
+            font-weight: 700;
+            color: #333;
+        }
+        
+        p {
+            color: #666;
+        }
+        
+        select, input {
+            border-radius: 4px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        
+        select:focus, input:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 8px rgba(52, 152, 219, 0.1);
+        }
     </style>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $(".approve-btn").click(function(e) {
+                e.preventDefault();
+                var timeEventID = $(this).val();
+                var row = $(this).closest("tr");
+                $.ajax({
+                    url: "approve_deny.php",
+                    type: "POST",
+                    data: {approve: timeEventID},
+                    success: function(response) {
+                        if(response == "success") {
+                            row.remove();
+                        } else {
+                            alert("Error approving time sheet.");
+                        }
+                    }
+                });
+            });
+
+            $(".deny-btn").click(function(e) {
+                e.preventDefault();
+                var timeEventID = $(this).val();
+                var row = $(this).closest("tr");
+                $.ajax({
+                    url: "approve_deny.php",
+                    type: "POST",
+                    data: {deny: timeEventID},
+                    success: function(response) {
+                        if(response == "success") {
+                            row.remove();
+                        } else {
+                            alert("Error denying time sheet.");
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 </head>
 <body>
     <div class="container">
@@ -98,14 +167,8 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                     <td><?php echo htmlspecialchars($row['hours']); ?></td>
                     <td><?php echo htmlspecialchars($row['weekDate']); ?></td>
                     <td>
-                        <form method="POST" action="">
-                            <input type="hidden" name="approve" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">
-                            <button type="submit" class="btn btn-success">Approve</button>
-                        </form>
-                        <form method="POST" action="">
-                            <input type="hidden" name="deny" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">
-                            <button type="submit" class="btn btn-danger">Deny</button>
-                        </form>
+                        <button class="btn btn-success approve-btn" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">Approve</button>
+                        <button class="btn btn-danger deny-btn" value="<?php echo htmlspecialchars($row['timeEventID']); ?>">Deny</button>
                     </td>
                 </tr>
                 <?php endwhile; ?>
